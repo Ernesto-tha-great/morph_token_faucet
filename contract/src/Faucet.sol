@@ -2,55 +2,37 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/security/Pausable.sol";
+import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract TokenFaucet is Ownable, Pausable {
-    IERC20 public token;
-    uint256 public withdrawalAmount;
+contract MorphFaucet is Ownable, Pausable {
+    uint256 public constant WITHDRAWAL_AMOUNT = 0.01 ether;
     uint256 public cooldownTime;
 
     mapping(address => uint256) public lastWithdrawTime;
 
     event Withdrawal(address indexed user, uint256 amount, uint256 time);
-    event WithdrawalAmountUpdated(uint256 oldAmount, uint256 newAmount);
     event CooldownTimeUpdated(uint256 oldCooldown, uint256 newCooldown);
-    event TokenAddressUpdated(address oldToken, address newToken);
 
-    constructor(address tokenAddress, uint256 initialWithdrawalAmount, uint256 initialCooldownTime) Ownable(msg.sender) {
-        token = IERC20(tokenAddress);
-        withdrawalAmount = initialWithdrawalAmount;
+    constructor(uint256 initialCooldownTime) Ownable(msg.sender) {
         cooldownTime = initialCooldownTime;
     }
 
     receive() external payable {}
 
-    function withdraw() external whenNotPaused {
-        require(token.balanceOf(address(this)) >= withdrawalAmount, "Insufficient funds in faucet");
-        require(block.timestamp - lastWithdrawTime[msg.sender] >= cooldownTime, "Can only withdraw once per cooldown period");
+    function withdraw(address user) external  whenNotPaused {
+        require(address(this).balance >= WITHDRAWAL_AMOUNT, "Insufficient funds in faucet");
+        require(block.timestamp - lastWithdrawTime[user] >= cooldownTime, "Can only withdraw once per cooldown period");
 
-        lastWithdrawTime[msg.sender] = block.timestamp;
-        token.transfer(msg.sender, withdrawalAmount);
+        lastWithdrawTime[user] = block.timestamp;
+        payable(user).transfer(WITHDRAWAL_AMOUNT);
 
-        emit Withdrawal(msg.sender, withdrawalAmount, block.timestamp);
-    }
-
-    function setWithdrawalAmount(uint256 newAmount) external onlyOwner {
-        uint256 oldAmount = withdrawalAmount;
-        withdrawalAmount = newAmount;
-        emit WithdrawalAmountUpdated(oldAmount, newAmount);
+        emit Withdrawal(user, WITHDRAWAL_AMOUNT, block.timestamp);
     }
 
     function setCooldownTime(uint256 newCooldownTime) external onlyOwner {
         uint256 oldCooldownTime = cooldownTime;
         cooldownTime = newCooldownTime;
         emit CooldownTimeUpdated(oldCooldownTime, newCooldownTime);
-    }
-
-    function setTokenAddress(address newTokenAddress) external onlyOwner {
-        address oldTokenAddress = address(token);
-        token = IERC20(newTokenAddress);
-        emit TokenAddressUpdated(oldTokenAddress, newTokenAddress);
     }
 
     function pauseFaucet() external onlyOwner {
@@ -67,5 +49,9 @@ contract TokenFaucet is Ownable, Pausable {
         } else {
             return cooldownTime - (block.timestamp - lastWithdrawTime[user]);
         }
+    }
+
+    function recoverETH() external onlyOwner {
+        payable(owner()).transfer(address(this).balance);
     }
 }

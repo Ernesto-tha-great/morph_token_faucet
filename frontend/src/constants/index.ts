@@ -1,4 +1,5 @@
-import { counterAbi } from "./abi";
-const counterAddress = "0xeaE184E93f2a38d642Ae016f2a53110a2c5d1FCB";
+import { faucetAbi } from "./abi";
 
-export { counterAbi, counterAddress };
+const faucetAddress = "0xF63a6e063Ca678685553E9C0adC9068D01D35714";
+
+export { faucetAbi, faucetAddress };

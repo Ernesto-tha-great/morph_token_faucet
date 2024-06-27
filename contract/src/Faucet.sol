@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/Pausable.sol";
 
-contract ETHFaucet is Ownable, Pausable {
+contract MorphFaucet is Ownable, Pausable {
     uint256 public constant WITHDRAWAL_AMOUNT = 0.01 ether;
     uint256 public cooldownTime;
 
@@ -19,14 +19,14 @@ contract ETHFaucet is Ownable, Pausable {
 
     receive() external payable {}
 
-    function withdraw() external whenNotPaused {
+    function withdraw(address user) external  whenNotPaused {
         require(address(this).balance >= WITHDRAWAL_AMOUNT, "Insufficient funds in faucet");
-        require(block.timestamp - lastWithdrawTime[msg.sender] >= cooldownTime, "Can only withdraw once per cooldown period");
+        require(block.timestamp - lastWithdrawTime[user] >= cooldownTime, "Can only withdraw once per cooldown period");
 
-        lastWithdrawTime[msg.sender] = block.timestamp;
-        payable(msg.sender).transfer(WITHDRAWAL_AMOUNT);
+        lastWithdrawTime[user] = block.timestamp;
+        payable(user).transfer(WITHDRAWAL_AMOUNT);
 
-        emit Withdrawal(msg.sender, WITHDRAWAL_AMOUNT, block.timestamp);
+        emit Withdrawal(user, WITHDRAWAL_AMOUNT, block.timestamp);
     }
 
     function setCooldownTime(uint256 newCooldownTime) external onlyOwner {
@@ -49,5 +49,9 @@ contract ETHFaucet is Ownable, Pausable {
         } else {
             return cooldownTime - (block.timestamp - lastWithdrawTime[user]);
         }
+    }
+
+    function recoverETH() external onlyOwner {
+        payable(owner()).transfer(address(this).balance);
     }
 }

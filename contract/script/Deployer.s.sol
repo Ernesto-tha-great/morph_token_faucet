@@ -2,16 +2,16 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {TokenFaucet} from "../src/Faucet.sol";
+import {MorphFaucet} from "../src/Faucet.sol";
 
 contract CounterScript is Script {
     function setUp() public {}
 
-      function run() public returns(TokenFaucet) {
+      function run() public returns(MorphFaucet) {
         vm.startBroadcast();
-       TokenFaucet tokenFaucet = new TokenFaucet(1, 86400);
+       MorphFaucet morphFaucet = new MorphFaucet(86400);
 
         vm.stopBroadcast();
-        return tokenFaucet;
+        return morphFaucet;
     }
 }
